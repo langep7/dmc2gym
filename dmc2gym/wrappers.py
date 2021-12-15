@@ -42,20 +42,31 @@ class DMCWrapper(core.Env):
         task_kwargs=None,
         visualize_reward={},
         from_pixels=False,
+        from_encoded_state=False,
         height=84,
         width=84,
         camera_id=0,
         frame_skip=1,
         environment_kwargs=None,
-        channels_first=True
+        channels_first=True,
+        pos_vel_encoder=None,
+        normaliser=None,
+        encoded_state_dim=None,
+        model=None
     ):
         assert 'random' in task_kwargs, 'please specify a seed, for deterministic behaviour'
         self._from_pixels = from_pixels
+        self._from_encoded_state = from_encoded_state
         self._height = height
         self._width = width
         self._camera_id = camera_id
         self._frame_skip = frame_skip
         self._channels_first = channels_first
+        self._pos_vel_encoder = pos_vel_encoder
+        self._normaliser = normaliser
+        self._encoded_state_dim = encoded_state_dim
+        self._model = model
+        self._last_obs = []
 
         # create task
         self._env = suite.load(
@@ -81,6 +92,12 @@ class DMCWrapper(core.Env):
             self._observation_space = spaces.Box(
                 low=0, high=255, shape=shape, dtype=np.uint8
             )
+        elif from_encoded_state:
+            shape = [1, encoded_state_dim]
+            bound = np.inf
+            self._observation_space = spaces.Box(
+                low=-bound, high=bound, shape=shape, dtype=np.float32
+            )
         else:
             self._observation_space = _spec_to_box(
                 self._env.observation_spec().values()
@@ -99,7 +116,7 @@ class DMCWrapper(core.Env):
         return getattr(self._env, name)
 
     def _get_obs(self, time_step):
-        if self._from_pixels:
+        if self._from_pixels or self._from_encoded_state:
             obs = self.render(
                 height=self._height,
                 width=self._width,
@@ -107,6 +124,16 @@ class DMCWrapper(core.Env):
             )
             if self._channels_first:
                 obs = obs.transpose(2, 0, 1).copy()
+            if self._from_encoded_state:
+                if not self._last_obs:
+                    return np.zeros((1, self._encoded_state_dim))
+                else:
+                    new_obs = obs
+                    combined_obs = [self._last_obs, new_obs]
+                    normalised_obs = self._normaliser.normalise_data(combined_obs)
+                    encoded_states = self._pos_vel_encoder.get_encoded_states(normalised_obs, 2, self._model)
+                    self._last_obs = obs
+                    return encoded_states[1]
         else:
             obs = _flatten_obs(time_step.observation)
         return obs

@@ -8,6 +8,7 @@ def make(
         seed=1,
         visualize_reward=True,
         from_pixels=False,
+        from_encoded_state=False,
         height=84,
         width=84,
         camera_id=0,
@@ -15,7 +16,11 @@ def make(
         episode_length=1000,
         environment_kwargs=None,
         time_limit=None,
-        channels_first=True
+        channels_first=True,
+        pos_vel_encoder=None,
+        normaliser=None,
+        encoded_state_dim=None,
+        model=None
 ):
     env_id = 'dmc_%s_%s_%s-v1' % (domain_name, task_name, seed)
 
@@ -41,11 +46,16 @@ def make(
                 environment_kwargs=environment_kwargs,
                 visualize_reward=visualize_reward,
                 from_pixels=from_pixels,
+                from_encoded_state=from_encoded_state,
                 height=height,
                 width=width,
                 camera_id=camera_id,
                 frame_skip=frame_skip,
                 channels_first=channels_first,
+                pos_vel_encoder=pos_vel_encoder,
+                normaliser=normaliser,
+                encoded_state_dim=encoded_state_dim,
+                model=model,
             ),
             max_episode_steps=max_episode_steps,
         )
