@@ -66,7 +66,6 @@ class DMCWrapper(core.Env):
         self._normaliser = normaliser
         self._encoded_state_dim = encoded_state_dim
         self._model = model
-        self._last_obs = []
 
         # create task
         self._env = suite.load(
@@ -125,15 +124,9 @@ class DMCWrapper(core.Env):
             if self._channels_first:
                 obs = obs.transpose(2, 0, 1).copy()
             if self._from_encoded_state:
-                if not self._last_obs:
-                    return np.zeros((1, self._encoded_state_dim))
-                else:
-                    new_obs = obs
-                    combined_obs = [self._last_obs, new_obs]
-                    normalised_obs = self._normaliser.normalise_data(combined_obs)
-                    encoded_states = self._pos_vel_encoder.get_encoded_states(normalised_obs, 2, self._model)
-                    self._last_obs = obs
-                    return encoded_states[1]
+                normalised_obs = self._normaliser.normalise_data([obs])
+                encoded_states = self._pos_vel_encoder.get_encoded_states(normalised_obs, 1, self._model)
+                return encoded_states
         else:
             obs = _flatten_obs(time_step.observation)
         return obs
