@@ -20,7 +20,8 @@ def make(
         pos_vel_encoder=None,
         normaliser=None,
         encoded_state_dim=None,
-        model=None
+        model=None,
+        use_dense_reward=False
 ):
     env_id = 'dmc_%s_%s_%s-v1' % (domain_name, task_name, seed)
 
@@ -56,6 +57,7 @@ def make(
                 normaliser=normaliser,
                 encoded_state_dim=encoded_state_dim,
                 model=model,
+                use_dense_reward=use_dense_reward,
             ),
             max_episode_steps=max_episode_steps,
         )

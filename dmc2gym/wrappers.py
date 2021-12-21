@@ -1,7 +1,12 @@
 from gym import core, spaces
 from dm_control import suite
 from dm_env import specs
+from dm_control.utils import rewards
 import numpy as np
+
+_ANGLE_BOUND = 8
+_COSINE_BOUND = np.cos(np.deg2rad(_ANGLE_BOUND))
+_MARGIN_BOUND = np.deg2rad(120)
 
 
 def _spec_to_box(spec):
@@ -52,7 +57,8 @@ class DMCWrapper(core.Env):
         pos_vel_encoder=None,
         normaliser=None,
         encoded_state_dim=None,
-        model=None
+        model=None,
+        use_dense_reward=False
     ):
         assert 'random' in task_kwargs, 'please specify a seed, for deterministic behaviour'
         self._from_pixels = from_pixels
@@ -66,6 +72,7 @@ class DMCWrapper(core.Env):
         self._normaliser = normaliser
         self._encoded_state_dim = encoded_state_dim
         self._model = model
+        self._use_dense_reward = use_dense_reward
 
         # create task
         self._env = suite.load(
@@ -166,7 +173,10 @@ class DMCWrapper(core.Env):
 
         for _ in range(self._frame_skip):
             time_step = self._env.step(action)
-            reward += time_step.reward or 0
+            if self._use_dense_reward:
+                reward += rewards.tolerance(self._env.physics.pole_vertical(), (_COSINE_BOUND, 1), margin=_MARGIN_BOUND)
+            else:
+                reward += time_step.reward or 0
             done = time_step.last()
             if done:
                 break
