@@ -6,9 +6,14 @@ A lightweight wrapper around the DeepMind Control Suite that provides the standa
 * Setting ```frame_skip``` argument lets to perform action repeat.
 
 
-### Instalation
+### Installation main branch
 ```
 pip install git+git://github.com/denisyarats/dmc2gym.git
+```
+
+### Installation branch for state encoder usage
+```
+git clone -b enable_state_encoder https://github.com/langep7/dmc2gym.git
 ```
 
 ### Usage
