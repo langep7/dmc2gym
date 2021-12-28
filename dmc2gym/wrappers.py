@@ -6,7 +6,7 @@ import numpy as np
 
 _ANGLE_BOUND = 8
 _COSINE_BOUND = np.cos(np.deg2rad(_ANGLE_BOUND))
-_MARGIN_BOUND = np.deg2rad(120)
+_MARGIN_BOUND = np.deg2rad(180-_ANGLE_BOUND)
 
 
 def _spec_to_box(spec):
