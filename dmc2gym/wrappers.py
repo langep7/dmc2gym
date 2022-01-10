@@ -3,10 +3,13 @@ from dm_control import suite
 from dm_env import specs
 from dm_control.utils import rewards
 import numpy as np
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
 
 _ANGLE_BOUND = 8
 _COSINE_BOUND = np.cos(np.deg2rad(_ANGLE_BOUND))
-_MARGIN_BOUND = np.deg2rad(180-_ANGLE_BOUND)
+_MARGIN_BOUND = np.deg2rad(150-_ANGLE_BOUND)
 
 
 def _spec_to_box(spec):
@@ -58,7 +61,10 @@ class DMCWrapper(core.Env):
         normaliser=None,
         encoded_state_dim=None,
         model=None,
-        use_dense_reward=False
+        use_dense_reward=False,
+        log_dir=None,
+        log_pixel_images=False,
+        log_measurements=False,
     ):
         assert 'random' in task_kwargs, 'please specify a seed, for deterministic behaviour'
         self._from_pixels = from_pixels
@@ -73,6 +79,11 @@ class DMCWrapper(core.Env):
         self._encoded_state_dim = encoded_state_dim
         self._model = model
         self._use_dense_reward = use_dense_reward
+        self._log_dir = log_dir
+        self._log_pixel_images = log_pixel_images
+        self._log_measurements = log_measurements
+
+        self._log_pixel_dir_ext = '/images'
 
         # create task
         self._env = suite.load(
@@ -174,7 +185,8 @@ class DMCWrapper(core.Env):
         for _ in range(self._frame_skip):
             time_step = self._env.step(action)
             if self._use_dense_reward:
-                reward += rewards.tolerance(self._env.physics.pole_vertical(), (_COSINE_BOUND, 1), margin=_MARGIN_BOUND)
+                reward += rewards.tolerance(self._env.physics.pole_vertical(), (_COSINE_BOUND, 1), margin=_MARGIN_BOUND,
+                                            sigmoid='gaussian')
             else:
                 reward += time_step.reward or 0
             done = time_step.last()
@@ -183,6 +195,12 @@ class DMCWrapper(core.Env):
         obs = self._get_obs(time_step)
         self.current_state = _flatten_obs(time_step.observation)
         extra['discount'] = time_step.discount
+
+        if self._log_pixel_images:
+            self.save_pixel_img()
+        if self._log_measurements:
+            self.save_measurements(time_step)
+
         return obs, reward, done, extra
 
     def reset(self):
@@ -199,3 +217,34 @@ class DMCWrapper(core.Env):
         return self._env.physics.render(
             height=height, width=width, camera_id=camera_id
         )
+
+    def save_pixel_img(self):
+        save_path = self._log_dir + self._log_pixel_dir_ext
+        os.makedirs(save_path, exist_ok=True)
+
+        img_number = 0
+        while os.path.isfile(save_path + '/img' + str(img_number) + '.png'):
+            img_number += 1
+
+        obs = self.render(
+            height=self._height,
+            width=self._width,
+            camera_id=self._camera_id
+        )
+
+        plt.imsave(save_path + '/img' + str(img_number) + '.png', obs)
+
+    def save_measurements(self, time_step):
+        log_local = _flatten_obs(time_step.observation)
+        log_save_path = self._log_dir + '/measurements'
+        if os.path.isfile(log_save_path + ".npy"):
+            log = np.load(log_save_path + ".npy")
+            log = np.vstack((log, log_local))
+            np.save(log_save_path, log)
+            df_log = pd.DataFrame(log)
+            df_log.to_csv(log_save_path + ".csv")
+        else:
+            np.save(log_save_path, log_local)
+
+
+
