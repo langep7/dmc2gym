@@ -186,7 +186,7 @@ class DMCWrapper(core.Env):
             time_step = self._env.step(action)
             if self._use_dense_reward:
                 reward += rewards.tolerance(self._env.physics.pole_vertical(), (_COSINE_BOUND, 1), margin=_MARGIN_BOUND,
-                                            sigmoid='gaussian')
+                                            sigmoid='long_tail')
             else:
                 reward += time_step.reward or 0
             done = time_step.last()
