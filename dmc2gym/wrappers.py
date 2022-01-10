@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 _ANGLE_BOUND = 8
 _COSINE_BOUND = np.cos(np.deg2rad(_ANGLE_BOUND))
-_MARGIN_BOUND = np.deg2rad(150-_ANGLE_BOUND)
+_MARGIN_BOUND = np.deg2rad(120-_ANGLE_BOUND)
 
 
 def _spec_to_box(spec):
@@ -186,7 +186,7 @@ class DMCWrapper(core.Env):
             time_step = self._env.step(action)
             if self._use_dense_reward:
                 reward += rewards.tolerance(self._env.physics.pole_vertical(), (_COSINE_BOUND, 1), margin=_MARGIN_BOUND,
-                                            sigmoid='long_tail')
+                                            sigmoid='gaussian')
             else:
                 reward += time_step.reward or 0
             done = time_step.last()
