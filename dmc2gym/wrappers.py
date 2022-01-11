@@ -185,8 +185,11 @@ class DMCWrapper(core.Env):
         for _ in range(self._frame_skip):
             time_step = self._env.step(action)
             if self._use_dense_reward:
-                reward += rewards.tolerance(self._env.physics.pole_vertical(), (_COSINE_BOUND, 1), margin=_MARGIN_BOUND,
+                reward_raw = rewards.tolerance(self._env.physics.pole_vertical(), (_COSINE_BOUND, 1), margin=_MARGIN_BOUND,
                                             sigmoid='gaussian')
+                if reward_raw != 1.0:
+                    reward_raw = reward_raw / 10
+                reward += reward_raw
             else:
                 reward += time_step.reward or 0
             done = time_step.last()
