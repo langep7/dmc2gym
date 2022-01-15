@@ -65,6 +65,7 @@ class DMCWrapper(core.Env):
         log_dir=None,
         log_pixel_images=False,
         log_measurements=False,
+        encoded_state_normaliser=None,
     ):
         assert 'random' in task_kwargs, 'please specify a seed, for deterministic behaviour'
         self._from_pixels = from_pixels
@@ -82,6 +83,7 @@ class DMCWrapper(core.Env):
         self._log_dir = log_dir
         self._log_pixel_images = log_pixel_images
         self._log_measurements = log_measurements
+        self._encoded_state_normaliser = encoded_state_normaliser
 
         self._log_pixel_dir_ext = '/images'
 
@@ -144,6 +146,8 @@ class DMCWrapper(core.Env):
             if self._from_encoded_state:
                 normalised_obs = self._normaliser.normalise_data([obs])
                 encoded_states = self._pos_vel_encoder.get_encoded_states(normalised_obs, 1, self._model)
+                if self._encoded_state_normaliser is not None:
+                    encoded_states = self._encoded_state_normaliser.normalise_data(encoded_states)
                 return encoded_states
         else:
             obs = _flatten_obs(time_step.observation)

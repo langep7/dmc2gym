@@ -25,6 +25,7 @@ def make(
         log_dir=None,
         log_pixel_images=False,
         log_measurements=False,
+        encoded_state_normaliser=None,
 ):
     env_id = 'dmc_%s_%s_%s-v1' % (domain_name, task_name, seed)
 
@@ -64,6 +65,7 @@ def make(
                 log_dir=log_dir,
                 log_pixel_images=log_pixel_images,
                 log_measurements=log_measurements,
+                encoded_state_normaliser=encoded_state_normaliser,
             ),
             max_episode_steps=max_episode_steps,
         )
